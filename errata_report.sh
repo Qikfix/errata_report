@@ -19,18 +19,17 @@ for b in $(hammer --csv host list --search 'name !~ virt-who*' --thin 1 | grep -
 
 cat $FULL_LIST | awk 'FS="," {print $4","$3","$2","$5","$1}' >$FULL_PARSED_LIST
 
-cat $FULL_PARSED_LIST | sort -k 2 -t , | cut -d, -f2,3 | grep ^R | uniq -c >$ERRATA_CH
+cat $FULL_PARSED_LIST | sort -k 2 -t , | cut -d, -f2,3,5 | grep ^R >$ERRATA_CH
 
 echo "Type,Id,Title,Issued,Affected Hosts"
 while read line
 do
-  errata_id=$(echo $line | awk '{print $2}' | cut -d, -f1)
-  internal_id=$(echo $line | awk '{print $2}' | cut -d, -f2)
-  count=$(echo $line | awk '{print $1}')
+  errata_id=$(echo $line | cut -d, -f1)
+  internal_id=$(echo $line | cut -d, -f2)
+  fqdn=$(echo $line | cut -d, -f3)
 
   issue_date=$(hammer erratum info --id $internal_id | grep ^Issued | awk '{print $2}')
   type=$(grep -E -o "$errata_id.*" /tmp/full_list.log | cut -d, -f2 | sort -u)
   title=$(grep -E -o "$errata_id.*" /tmp/full_list.log | cut -d, -f3- | sort -u)
-  echo "$type,$errata_id,$title,$issue_date,$count"
-
+  echo "$type,$errata_id,$title,$issue_date,$fqdn"
 done < $ERRATA_CH
